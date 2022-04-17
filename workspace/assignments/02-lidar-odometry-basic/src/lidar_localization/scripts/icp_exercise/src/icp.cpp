@@ -79,7 +79,7 @@ public:
 
 Icp::Icp() {
 	// TODO Auto-generated constructor stub
-	print_ceres_log_ = true;
+	print_ceres_log_ = false;
 
 }
 

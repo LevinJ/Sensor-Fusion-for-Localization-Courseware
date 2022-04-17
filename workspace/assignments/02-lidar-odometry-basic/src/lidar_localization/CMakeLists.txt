@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation 
   std_srvs
 )
+find_package(Ceres REQUIRED)
 
 add_service_files(
    FILES
@@ -35,19 +36,19 @@ include(cmake/glog.cmake)
 include(cmake/YAML.cmake)
 include(cmake/PCL.cmake)
 
-include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(./scripts/icp_exercise/include include ${catkin_INCLUDE_DIRS})
 
 include(cmake/global_defination.cmake)
 catkin_package()
 
-file(GLOB_RECURSE ALL_SRCS "*.cpp")
+file(GLOB_RECURSE ALL_SRCS "src/*.cpp")
 file(GLOB_RECURSE NODE_SRCS "src/*_node.cpp")
 
 list(REMOVE_ITEM ALL_SRCS ${NODE_SRCS})
-
+add_definitions( -fPIC)
 add_executable(front_end_node src/front_end_node.cpp ${ALL_SRCS})
 add_dependencies(front_end_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(front_end_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
+target_link_libraries(front_end_node  ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES} /home/levin/workspace/ros_projects/src/sensor-Fusion-for-Localization-Courseware/workspace/assignments/02-lidar-odometry-basic/src/lidar_localization/scripts/icp_exercise/build/libicp.a ${CERES_LIBRARIES} )
 
 #############
 ## Install ##

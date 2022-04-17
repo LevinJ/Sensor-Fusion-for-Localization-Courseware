@@ -10,7 +10,9 @@
 #include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
 #include "glog/logging.h"
-
+#include "TimerUtil.h"
+#include <ros/ros.h>
+#include <ros/console.h>
 #include "lidar_localization/global_defination/global_defination.h"
 
 namespace lidar_localization {
@@ -139,7 +141,10 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose) 
     }
 
     // 不是第一帧，就正常匹配
+    semantic_slam::TimerUtil timer;
     registration_ptr_->ScanMatch(filtered_cloud_ptr, predict_pose, result_cloud_ptr_, current_frame_.pose);
+    auto elapse_time = timer.elapsed();
+    ROS_ERROR("scan duration = %f, num = %d", elapse_time, filtered_cloud_ptr->points.size());
     cloud_pose = current_frame_.pose;
 
     // 更新相邻两帧的相对运动

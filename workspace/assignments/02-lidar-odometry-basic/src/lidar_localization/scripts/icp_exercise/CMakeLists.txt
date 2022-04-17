@@ -2,13 +2,12 @@ cmake_minimum_required (VERSION 3.4)
 
 project(icp_test)
 
-if(NOT BUILD_QNX)
-set(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_BUILD_TYPE "Release")
+SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 find_package(Eigen3)
 find_package(Ceres REQUIRED)
 message(STATUS "EIGEN3_INCLUDE_DIR=${EIGEN3_INCLUDE_DIR}")
 message(STATUS "CERES_INCLUDE_DIRS=${CERES_INCLUDE_DIRS}")
-endif ()
 
 find_package(PCL 1.8 REQUIRED)
 
