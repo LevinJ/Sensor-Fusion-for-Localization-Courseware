@@ -1,4 +1,4 @@
-data_path: /workspace/assignments/02-lidar-odometry-basic/src/lidar_localization   # 数据存放路径
+data_path: /home/levin/workspace/ros_projects/src/sensor-Fusion-for-Localization-Courseware/workspace/assignments/02-lidar-odometry-basic/src/lidar_localization   # 数据存放路径
 
 # 匹配
 # TODO: implement your custom registration method and add it here

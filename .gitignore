@@ -1,1 +1,3 @@
 .vscode
+slam_data/
+*.pyc
