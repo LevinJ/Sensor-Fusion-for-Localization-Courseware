@@ -3,8 +3,9 @@ project(lidar_localization)
 
 SET(CMAKE_BUILD_TYPE "Release")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
-add_compile_options(-std=c++14)
-add_definitions(-std=c++14)
+#add_compile_options(-std=c++14)
+#add_definitions(-std=c++14)
+set(CMAKE_CXX_STANDARD 14)
 
 find_package(
     catkin REQUIRED COMPONENTS
