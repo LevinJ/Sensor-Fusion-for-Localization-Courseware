@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(lidar_localization)
 
-SET(CMAKE_BUILD_TYPE "Release")
+SET(CMAKE_BUILD_TYPE "Debug")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 #add_compile_options(-std=c++14)
 #add_definitions(-std=c++14)
@@ -50,7 +50,7 @@ include_directories(
 include(cmake/global_defination.cmake)
 catkin_package()
 
-file(GLOB_RECURSE ALL_SRCS "*.cpp")
+file(GLOB_RECURSE ALL_SRCS "src/*.cpp")
 file(GLOB_RECURSE NODE_SRCS "src/*_node.cpp")
 
 list(REMOVE_ITEM ALL_SRCS ${NODE_SRCS})
