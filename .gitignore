@@ -1,1 +1,6 @@
 .vscode
+build/
+02-lidar-odometry-basic/
+03-lidar-odometry-advanced/
+.project
+.cproject
