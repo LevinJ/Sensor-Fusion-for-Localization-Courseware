@@ -6,6 +6,8 @@
 #include "lidar_localization/matching/matching_flow.hpp"
 #include "glog/logging.h"
 #include "lidar_localization/global_defination/global_defination.h"
+#include "lidar_localization/tools/PoseInfo.h"
+#include <iostream>
 
 namespace lidar_localization {
 MatchingFlow::MatchingFlow(ros::NodeHandle& nh) {
@@ -83,9 +85,7 @@ bool MatchingFlow::ValidData() {
         gnss_data_buff_.clear();
         return true;
     }
-
     current_gnss_data_ = gnss_data_buff_.front();
-
     double diff_time = current_cloud_data_.time - current_gnss_data_.time;
     if (diff_time < -0.05) {
         cloud_data_buff_.pop_front();
@@ -114,11 +114,16 @@ bool MatchingFlow::UpdateMatching() {
         // naive implementation:
         Eigen::Matrix4f init_pose = Eigen::Matrix4f::Identity();
         
-        matching_ptr_->SetInitPose(init_pose);
+        matching_ptr_->SetInitPose(current_gnss_data_.pose);
         matching_ptr_->SetInited();
     }
 
-    return matching_ptr_->Update(current_cloud_data_, laser_odometry_);
+    bool  res = matching_ptr_->Update(current_cloud_data_, laser_odometry_);
+//    std::cout.precision(3);
+//    std::cout<< std::fixed<<PoseInfo("lidar ").construct_fromT(laser_odometry_.cast<double>()).repr_<<", "<<current_cloud_data_.time<<std::endl;
+//    std::cout<<PoseInfo("gt").construct_fromT(current_gnss_data_.pose.cast<double>()).repr_<<", "<<current_gnss_data_.time<<std::endl;
+//    std::cout<<std::endl;
+    return res;
 }
 
 bool MatchingFlow::PublishData() {
