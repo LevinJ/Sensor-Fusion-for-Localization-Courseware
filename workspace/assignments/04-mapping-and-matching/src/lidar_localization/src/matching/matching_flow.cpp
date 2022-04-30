@@ -110,12 +110,15 @@ bool MatchingFlow::UpdateMatching() {
         //
         // Hints: You can use SetGNSSPose & SetScanContextPose from matching.hpp
         //
+    	if(!matching_ptr_->SetScanContextPose(current_cloud_data_)){
+    		return false;
+    	}
 
         // naive implementation:
-        Eigen::Matrix4f init_pose = Eigen::Matrix4f::Identity();
-        
-        matching_ptr_->SetInitPose(current_gnss_data_.pose);
-        matching_ptr_->SetInited();
+//        Eigen::Matrix4f init_pose = Eigen::Matrix4f::Identity();
+//
+//        matching_ptr_->SetInitPose(current_gnss_data_.pose);
+//        matching_ptr_->SetInited();
     }
 
     bool  res = matching_ptr_->Update(current_cloud_data_, laser_odometry_);
