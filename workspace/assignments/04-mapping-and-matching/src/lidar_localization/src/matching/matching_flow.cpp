@@ -8,6 +8,8 @@
 #include "lidar_localization/global_defination/global_defination.h"
 #include "lidar_localization/tools/PoseInfo.h"
 #include <iostream>
+#include "lidar_localization/tools/TimerUtil.h"
+#include <ros/console.h>
 
 namespace lidar_localization {
 MatchingFlow::MatchingFlow(ros::NodeHandle& nh) {
@@ -104,6 +106,7 @@ bool MatchingFlow::ValidData() {
 }
 
 bool MatchingFlow::UpdateMatching() {
+	semantic_slam::TimerUtil tk;
     if (!matching_ptr_->HasInited()) {
         //
         // TODO: implement global initialization here
@@ -122,6 +125,7 @@ bool MatchingFlow::UpdateMatching() {
     }
 
     bool  res = matching_ptr_->Update(current_cloud_data_, laser_odometry_);
+    ROS_WARN("UpdateMatching %.3f", tk.elapsed());
 //    std::cout.precision(3);
 //    std::cout<< std::fixed<<PoseInfo("lidar ").construct_fromT(laser_odometry_.cast<double>()).repr_<<", "<<current_cloud_data_.time<<std::endl;
 //    std::cout<<PoseInfo("gt").construct_fromT(current_gnss_data_.pose.cast<double>()).repr_<<", "<<current_gnss_data_.time<<std::endl;

@@ -3,7 +3,7 @@ project(lidar_localization)
 
 set(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_BUILD_TYPE "Release")
-SET(CMAKE_CXX_FLAGS "-std=c++14 -O3 -Wall")
+#SET(CMAKE_CXX_FLAGS "-std=c++14 -O3 -Wall")
 SET(CMAKE_CXX_FLAGS_RELEASE "-std=c++14 -O3 -Wall")
 
 find_package(catkin REQUIRED COMPONENTS

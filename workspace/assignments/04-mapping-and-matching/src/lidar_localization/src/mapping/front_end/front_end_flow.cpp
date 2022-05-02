@@ -6,6 +6,7 @@
 #include "lidar_localization/mapping/front_end/front_end_flow.hpp"
 #include "glog/logging.h"
 #include "lidar_localization/global_defination/global_defination.h"
+#include "lidar_localization/tools/TimerUtil.h"
 
 namespace lidar_localization {
 FrontEndFlow::FrontEndFlow(ros::NodeHandle& nh, std::string cloud_topic, std::string odom_topic) {
@@ -49,6 +50,7 @@ bool FrontEndFlow::ValidData() {
 
 bool FrontEndFlow::UpdateLaserOdometry() {
     static bool odometry_inited = false;
+    semantic_slam::TimerUtil tk;
     if (!odometry_inited) {
         odometry_inited = true;
         // init lidar odometry:
@@ -56,7 +58,9 @@ bool FrontEndFlow::UpdateLaserOdometry() {
     }
 
     // update lidar odometry using current undistorted measurement:
-    return front_end_ptr_->Update(current_cloud_data_, laser_odometry_);
+    bool res =  front_end_ptr_->Update(current_cloud_data_, laser_odometry_);
+    ROS_WARN("UpdateLaserOdometry %.3f", tk.elapsed());
+    return res;
 }
 
 bool FrontEndFlow::PublishData() {
