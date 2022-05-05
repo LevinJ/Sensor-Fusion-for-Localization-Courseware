@@ -112,6 +112,95 @@ template <typename _T1> struct MultiPosAccResidual
   const Eigen::Matrix< _T1, 3 , 1> sample_;
 };
 
+
+class MultiPosAccAnalyticCostFunction : public ceres::SizedCostFunction<1, 9> {
+public:
+
+	MultiPosAccAnalyticCostFunction(const double &g_mag, const Eigen::Matrix<double, 3 , 1> &sample): g_mag_(g_mag), sample_(sample)
+	{
+
+	}
+	virtual ~MultiPosAccAnalyticCostFunction() {}
+	virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const{
+		auto params = parameters[0];
+		CalibratedTriad_<double> calib_triad(
+				//
+				// TODO: implement lower triad model here
+				//
+				// mis_yz, mis_zy, mis_zx:
+				params[0], params[1], params[2],
+				// mis_xz, mis_xy, mis_yx:
+				0, 0, 0,
+				//    s_x,    s_y,    s_z:
+				params[3], params[4], params[5],
+				//    b_x,    b_y,    b_z:
+				params[6], params[7], params[8]
+		);
+
+		// apply undistortion transform:
+		Eigen::Matrix<double, 3 , 1> calib_samp = calib_triad.unbiasNormalize(sample_);
+		double calib_samp_norm =  calib_samp.norm();
+
+		residuals[0] = g_mag_ - calib_samp_norm;
+		if(jacobians != NULL)
+		{
+			Eigen::Matrix<double, 1, 3> de_by_dy;
+			de_by_dy = -calib_samp.transpose()/calib_samp_norm; //jacobian for the calib_samp's norm
+			double x_b1 = sample_[0] - calib_triad.biasX(); //for x1 - b1
+			double x_b2 = sample_[1] - calib_triad.biasY();//for x2 - b2
+			double x_b3 = sample_[2] - calib_triad.biasZ();//fox x3 - b3
+
+			double sx = calib_triad.scaleX();
+			double sy = calib_triad.scaleY();
+			double sz = calib_triad.scaleZ();
+
+			double myz = calib_triad.misYZ();
+			double mzy = calib_triad.misZY();
+			double mzx = calib_triad.misZX();
+
+//			double mxz = calib_triad.misXZ();
+//			double mxy = calib_triad.misXY();
+//			double myx = calib_triad.misYX();
+
+
+
+			if(jacobians[0] != NULL)
+			{
+				//jacobian for misalignment parameters
+				Eigen::Map<Eigen::Matrix<double, 1, 3, Eigen::RowMajor> > J_mis(&jacobians[0][0]);
+				Eigen::Matrix<double, 3, 3>  dy_by_mis;
+				dy_by_mis << -sy * x_b2, sz * x_b3, 0,
+						0,          0,       -sz * x_b3,
+						0,          0,       0;
+				J_mis	= de_by_dy * dy_by_mis;
+
+				//jacobian for scale parameters
+				Eigen::Map<Eigen::Matrix<double, 1, 3, Eigen::RowMajor> > J_s(&jacobians[0][3]);
+				Eigen::Matrix<double, 3, 3>  dy_by_s;
+				dy_by_s << x_b1, myz * x_b2,  mzy * x_b3,
+						0,          x_b2,     mzx * x_b3,
+						0,          0,       x_b3;
+				J_s	= de_by_dy * dy_by_s;
+
+				//jacobian for bias parameters
+				Eigen::Map<Eigen::Matrix<double, 1, 3, Eigen::RowMajor> > J_b(&jacobians[0][6]);
+				Eigen::Matrix<double, 3, 3>  dy_by_b;
+				dy_by_b << sx, sy * myz,  sz * mzy,
+						0,          sy,    sz * mzx,
+						0,          0,       sz;
+				J_b	= -de_by_dy * dy_by_b;
+
+			}
+
+		}
+
+		return true;
+	}
+
+	const double g_mag_;
+	const Eigen::Matrix<double, 3 , 1> sample_;
+};
+
 template <typename _T1> struct MultiPosGyroResidual
 {
   MultiPosGyroResidual( const Eigen::Matrix< _T1, 3 , 1> &g_versor_pos0, 
@@ -253,9 +342,13 @@ bool MultiPosCalibration_<_T>::calibrateAcc(
     ceres::Problem problem;
     for( int i = 0; i < static_samples.size(); i++)
     {
-      ceres::CostFunction* cost_function = MultiPosAccResidual<_T>::Create ( 
-        g_mag_, static_samples[i].data() 
-      );
+//      ceres::CostFunction* cost_function = MultiPosAccResidual<_T>::Create (
+//        g_mag_, static_samples[i].data()
+//      );
+
+      ceres::CostFunction* cost_function = new MultiPosAccAnalyticCostFunction(
+              g_mag_, static_samples[i].data().template cast<double>()
+            );
 
       problem.AddResidualBlock ( 
         cost_function,           /* error fuction */
