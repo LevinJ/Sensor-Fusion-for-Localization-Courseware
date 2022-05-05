@@ -84,10 +84,13 @@ template <typename _T1> struct MultiPosAccResidual
       //
       // TODO: implement lower triad model here
       //
-      // mis_yz, mis_zy, mis_zx:
-      params[0], params[1], params[2],
-      // mis_xz, mis_xy, mis_yx:
+
+     // mis_yz, mis_zy, mis_zx:
       _T2(0), _T2(0), _T2(0),
+
+	  // mis_xz, mis_xy, mis_yx:
+      params[0], params[1], params[2],
+
       //    s_x,    s_y,    s_z:
       params[3], params[4], params[5], 
       //    b_x,    b_y,    b_z: 
@@ -342,13 +345,13 @@ bool MultiPosCalibration_<_T>::calibrateAcc(
     ceres::Problem problem;
     for( int i = 0; i < static_samples.size(); i++)
     {
-//      ceres::CostFunction* cost_function = MultiPosAccResidual<_T>::Create (
-//        g_mag_, static_samples[i].data()
-//      );
+      ceres::CostFunction* cost_function = MultiPosAccResidual<_T>::Create (
+        g_mag_, static_samples[i].data()
+      );
 
-      ceres::CostFunction* cost_function = new MultiPosAccAnalyticCostFunction(
-              g_mag_, static_samples[i].data().template cast<double>()
-            );
+//      ceres::CostFunction* cost_function = new MultiPosAccAnalyticCostFunction(
+//              g_mag_, static_samples[i].data().template cast<double>()
+//            );
 
       problem.AddResidualBlock ( 
         cost_function,           /* error fuction */
@@ -384,10 +387,10 @@ bool MultiPosCalibration_<_T>::calibrateAcc(
     //
     // TODO: implement lower triad model here
     // 
-    min_cost_calib_params[0],
-    min_cost_calib_params[1],
-    min_cost_calib_params[2],
     0,0,0,
+	min_cost_calib_params[0],
+	min_cost_calib_params[1],
+	min_cost_calib_params[2],
     min_cost_calib_params[3],
     min_cost_calib_params[4],
     min_cost_calib_params[5],
