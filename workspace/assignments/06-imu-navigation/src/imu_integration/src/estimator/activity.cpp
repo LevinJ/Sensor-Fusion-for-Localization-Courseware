@@ -126,12 +126,23 @@ bool Activity::UpdatePose(void) {
         // TODO: implement your estimation here
         //
         // get deltas:
-
+    	size_t index_curr = 1;
+    	size_t index_prev = 0;
+    	Eigen::Vector3d angular_delta;
+    	if(!GetAngularDelta(index_curr, index_prev, angular_delta)) {
+    		return false;
+    	}
         // update orientation:
+    	Eigen::Matrix3d R_curr;
+    	Eigen::Matrix3d R_prev;
+    	UpdateOrientation(angular_delta, R_curr, R_prev);
 
         // get velocity delta:
-
+    	double delta_t;
+    	Eigen::Vector3d velocity_delta;
+    	GetVelocityDelta(index_curr, index_prev, R_curr, R_prev, delta_t,  velocity_delta);
         // update position:
+    	UpdatePosition(delta_t, velocity_delta);
 
         // move forward -- 
         // NOTE: this is NOT fixed. you should update your buffer according to the method of your choice:
