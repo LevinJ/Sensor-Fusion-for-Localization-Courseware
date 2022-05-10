@@ -12,6 +12,8 @@ namespace imu_integration {
 
 namespace estimator {
 
+static bool g_use_euler = true;
+
 Activity::Activity(void) 
     : private_nh_("~"), 
     initialized_(false),
@@ -236,6 +238,10 @@ bool Activity::GetAngularDelta(
 
     angular_delta = 0.5*delta_t*(angular_vel_curr + angular_vel_prev);
 
+    if(g_use_euler){
+    	angular_delta = delta_t* angular_vel_prev;
+    }
+
     return true;
 }
 
@@ -272,6 +278,9 @@ bool Activity::GetVelocityDelta(
     Eigen::Vector3d linear_acc_prev = GetUnbiasedLinearAcc(imu_data_prev.linear_acceleration, R_prev);
     
     velocity_delta = 0.5*delta_t*(linear_acc_curr + linear_acc_prev);
+    if(g_use_euler){
+    	velocity_delta = delta_t* linear_acc_prev;
+    }
 
     return true;
 }
