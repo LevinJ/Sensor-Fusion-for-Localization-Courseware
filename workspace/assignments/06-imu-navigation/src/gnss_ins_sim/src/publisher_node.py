@@ -76,7 +76,7 @@ def gnss_ins_sim_publisher():
     rospy.init_node('gnss_ins_sim_node')
     
     # parse params:
-    motion_def_name = 'motion_def-3d.csv' #rospy.get_param('motion_file')
+    motion_def_name = 'demo.csv' #rospy.get_param('motion_file')
     sample_freq_imu = 100.0               #rospy.get_param('sample_frequency/imu')
     sample_freq_gps = 10.0                #rospy.get_param('sample_frequency/gps')
     topic_name_imu = '~sim/sensor/imu'    #rospy.get_param('topic_name')
@@ -85,7 +85,7 @@ def gnss_ins_sim_publisher():
     
     # generate simulated data:
     motion_def_path = os.path.join(
-        rospkg.RosPack().get_path('gnss_ins_sim'), 'config', 'motion_def', motion_def_name
+        os.path.dirname(__file__), '../', 'config', 'motion_def', motion_def_name
     )
     imu_simulator = get_gnss_ins_sim(
         # motion def file:
@@ -127,6 +127,8 @@ def gnss_ins_sim_publisher():
         pub.publish(msg)
 
         rate.sleep()
+        
+
 
 
 if __name__ == '__main__':

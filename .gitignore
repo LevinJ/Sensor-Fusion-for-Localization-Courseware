@@ -5,3 +5,6 @@ workspace/assignments/04-mapping-and-matching/
 workspace/assignments/05-imu-calib/
 .cproject
 .project
+.pydevproject
+.~*
+*.pyc
