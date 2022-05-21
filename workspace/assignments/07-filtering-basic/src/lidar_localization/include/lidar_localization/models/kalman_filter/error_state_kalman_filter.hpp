@@ -11,6 +11,8 @@
 
 namespace lidar_localization {
 
+#define kDimState 15
+
 class ErrorStateKalmanFilter : public KalmanFilter {
 public:
   ErrorStateKalmanFilter(const YAML::Node &node);
@@ -82,7 +84,7 @@ public:
 
 private:
   // indices:
-  static constexpr int kDimState{15};
+//  enum { kDimState = 15 };
 
   static constexpr int kIndexErrorPos{0};
   static constexpr int kIndexErrorVel{3};
@@ -269,6 +271,8 @@ private:
    * @return void
    */
   void GetQPose(Eigen::MatrixXd &Q, Eigen::VectorXd &Y);
+
+  Eigen::Matrix<double,3,3> skew(const Eigen::Matrix<double,3,1>& mat_in);
 
   // odometry estimation from IMU integration:
   Eigen::Matrix4d init_pose_ = Eigen::Matrix4d::Identity();

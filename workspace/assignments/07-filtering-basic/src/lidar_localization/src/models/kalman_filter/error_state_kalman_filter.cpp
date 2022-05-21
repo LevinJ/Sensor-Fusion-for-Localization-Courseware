@@ -200,6 +200,7 @@ bool ErrorStateKalmanFilter::Update(const IMUData &imu_data) {
 bool ErrorStateKalmanFilter::Correct(const IMUData &imu_data,
                                      const MeasurementType &measurement_type,
                                      const Measurement &measurement) {
+	return false;
   static Measurement measurement_;
 
   // get time delta:
@@ -458,20 +459,34 @@ void ErrorStateKalmanFilter::UpdatePosition(
  * @return void
  */
 void ErrorStateKalmanFilter::UpdateOdomEstimation(
-    Eigen::Vector3d &linear_acc_mid, Eigen::Vector3d &angular_vel_mid) {
-  //
-  // TODO: this is one possible solution to previous chapter, IMU Navigation,
-  // assignment
-  //
-  // get deltas:
+		Eigen::Vector3d &linear_acc_mid, Eigen::Vector3d &angular_vel_mid) {
+	//
+	// TODO: this is one possible solution to previous chapter, IMU Navigation,
+	// assignment
+	//
+	// get deltas:
+	size_t index_curr = 1;
+	size_t index_prev = 0;
+	Eigen::Vector3d angular_delta;
+	if(!GetAngularDelta(index_curr, index_prev, angular_delta, angular_vel_mid)) {
+		return ;
+	}
 
-  // update orientation:
+	// update orientation:
+	Eigen::Matrix3d R_curr;
+	Eigen::Matrix3d R_prev;
+	UpdateOrientation(angular_delta, R_curr, R_prev);
 
-  // get velocity delta:
+	// get velocity delta:
+	double delta_t;
+	Eigen::Vector3d velocity_delta;
+	GetVelocityDelta(index_curr, index_prev, R_curr, R_prev, delta_t,  velocity_delta, linear_acc_mid);
 
-  // save mid-value unbiased linear acc for error-state update:
 
-  // update position:
+	// save mid-value unbiased linear acc for error-state update:
+
+	// update position:
+	UpdatePosition(delta_t, velocity_delta);
 }
 
 /**
@@ -481,12 +496,19 @@ void ErrorStateKalmanFilter::UpdateOdomEstimation(
  * @return void
  */
 void ErrorStateKalmanFilter::SetProcessEquation(const Eigen::Matrix3d &C_nb,
-                                                const Eigen::Vector3d &f_n,
-                                                const Eigen::Vector3d &w_b) {
-  // TODO: set process / system equation:
-  // a. set process equation for delta vel:
+		const Eigen::Vector3d &f_n,
+		const Eigen::Vector3d &w_b) {
+	// TODO: set process / system equation:
+	// a. set process equation for delta vel:
+	F_.block<3, 3>(kIndexErrorVel, kIndexErrorOri) = -C_nb * skew(f_n);
+	F_.block<3, 3>(kIndexErrorVel, kIndexErrorAccel) = -C_nb;
 
-  // b. set process equation for delta ori:
+	B_.block<3, 3>(kIndexErrorVel, kIndexNoiseAccel) = C_nb;
+
+	// b. set process equation for delta ori:
+	F_.block<3, 3>(kIndexErrorOri, kIndexErrorOri) = -skew(w_b);
+
+
 }
 
 /**
@@ -500,7 +522,8 @@ void ErrorStateKalmanFilter::UpdateProcessEquation(
     const Eigen::Vector3d &angular_vel_mid) {
   // set linearization point:
   Eigen::Matrix3d C_nb = pose_.block<3, 3>(0, 0);
-  Eigen::Vector3d f_n = linear_acc_mid + g_;
+//  Eigen::Vector3d f_n = linear_acc_mid + g_;
+  Eigen::Vector3d f_n = C_nb.transpose() * (linear_acc_mid + g_);
   Eigen::Vector3d w_b = angular_vel_mid;
 
   // set process equation:
@@ -517,11 +540,23 @@ void ErrorStateKalmanFilter::UpdateErrorEstimation(
     const Eigen::Vector3d &angular_vel_mid) {
   static MatrixF F_1st;
   static MatrixF F_2nd;
+  static MatrixB B;
   // TODO: update process equation:
+  UpdateProcessEquation(linear_acc_mid, angular_vel_mid);
 
   // TODO: get discretized process equations:
+  F_1st = MatrixF::Identity() + F_ * T ;
+//  F_2nd = F_1st.transpose();
+  B = B_;
+
+  B.block<9, 12>(0, 0) *= T;
+  B.block<6, 12>(9, 0) *= sqrt(T);
 
   // TODO: perform Kalman prediction
+  X_ = F_1st * X_;
+  P_ = F_1st * P_ * F_1st.transpose() + B * Q_ * B.transpose();
+
+
 }
 
 /**
@@ -745,6 +780,18 @@ bool ErrorStateKalmanFilter::SaveObservabilityAnalysis(
   KalmanFilter::WriteAsCSV(kDimState, q_so_data, q_so_data_csv);
 
   return true;
+}
+
+Eigen::Matrix<double,3,3> ErrorStateKalmanFilter::skew(const Eigen::Matrix<double,3,1>& mat_in){
+	Eigen::Matrix<double,3,3> skew_mat;
+	skew_mat.setZero();
+	skew_mat(0,1) = -mat_in(2);
+	skew_mat(0,2) =  mat_in(1);
+	skew_mat(1,2) = -mat_in(0);
+	skew_mat(1,0) =  mat_in(2);
+	skew_mat(2,0) = -mat_in(1);
+	skew_mat(2,1) =  mat_in(0);
+	return skew_mat;
 }
 
 } // namespace lidar_localization
