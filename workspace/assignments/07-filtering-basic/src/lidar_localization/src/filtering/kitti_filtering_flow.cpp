@@ -111,6 +111,8 @@ bool KITTIFilteringFlow::Run() {
 }
 
 bool KITTIFilteringFlow::SaveOdometry(void) {
+  std::cout<<"trajectory.N ="<<trajectory.N<<std::endl;
+  std::cout<<"gnss.N ="<<gnss_data_buff_.size()<<std::endl;
   if (0 == trajectory.N) {
     return false;
   }
@@ -128,12 +130,14 @@ bool KITTIFilteringFlow::SaveOdometry(void) {
       !FileManager::CreateFile(ref_odom_ofs,
                                WORK_SPACE_PATH +
                                    "/slam_data/trajectory/ground_truth.txt")) {
-    return false;
+	  std::cout<<"failed to create files"<<std::endl;
+	  return false;
   }
 
   // write outputs:
   for (size_t i = 0; i < trajectory.N; ++i) {
     // sync ref pose with gnss measurement:
+	  std::cout<<"output i ="<< i<<std::endl;
     while (!gnss_data_buff_.empty() &&
            (gnss_data_buff_.front().time - trajectory.time_.at(i) <= -0.05)) {
       gnss_data_buff_.pop_front();
@@ -151,9 +155,10 @@ bool KITTIFilteringFlow::SaveOdometry(void) {
         trajectory.lidar_.at(i).block<3, 1>(0, 3);
 
     if ((position_ref - position_lidar).norm() > 3.0) {
+    	std::cout<<"too much deviation, skip"<<std::endl;
       continue;
     }
-
+    std::cout<<"outputed i ="<< i<<std::endl;
     SavePose(trajectory.fused_.at(i), fused_odom_ofs);
     SavePose(trajectory.lidar_.at(i), laser_odom_ofs);
     SavePose(current_gnss_data_.pose, ref_odom_ofs);
