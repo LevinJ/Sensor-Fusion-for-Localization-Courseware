@@ -200,7 +200,7 @@ bool ErrorStateKalmanFilter::Update(const IMUData &imu_data) {
 bool ErrorStateKalmanFilter::Correct(const IMUData &imu_data,
                                      const MeasurementType &measurement_type,
                                      const Measurement &measurement) {
-	return false;
+
   static Measurement measurement_;
 
   // get time delta:
@@ -570,10 +570,27 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPose(
   //
   // TODO: set measurement:
   //
+	auto p = T_nb.block<3, 1>(0, 3);
+	auto R = Sophus::SO3<double>(Eigen::Quaterniond(T_nb.block<3, 3>(0, 0)).normalized());
+	auto p_hat = pose_.block<3, 1>(0, 3);
+	auto R_hat =  Sophus::SO3<double>(pose_.block<3, 3>(0, 0));
+
+
+	auto delta_p = p_hat - p;
+	auto delta_theta = (R.inverse() * R_hat).log();
+//	auto delta_theta = Sophus::SO3<double>(delta_R).log();
+
+	Y = Eigen::VectorXd::Zero(kDimMeasurementPose);
+	Y.block<3, 1>(0, 0) = delta_p;
+	Y.block<3, 1>(3, 0) = delta_theta;
 
   // TODO: set measurement equation:
+	G = GPose_;
 
-  // TODO: set Kalman gain:              
+  // TODO: set Kalman gain:
+	auto PGt = P_ * G.transpose();
+	auto S = G * PGt + CPose_ * RPose_ *  CPose_.transpose();
+	K =  PGt * S.inverse();
 }
 
 /**
@@ -598,6 +615,8 @@ void ErrorStateKalmanFilter::CorrectErrorEstimation(
   }
 
   // TODO: perform Kalman correct:
+  X_ = X_ + K * (Y - G * X_);
+  P_ = (MatrixP::Identity() - K * G ) * P_;
 }
 
 /**
@@ -606,25 +625,30 @@ void ErrorStateKalmanFilter::CorrectErrorEstimation(
  * @return void
  */
 void ErrorStateKalmanFilter::EliminateError(void) {
-  //
-  // TODO: correct state estimation using the state of ESKF
-  //
-  // a. position:
-  // do it!
-  // b. velocity:
-  // do it!
-  // c. orientation:
-  // do it!
+	//
+	// TODO: correct state estimation using the state of ESKF
+	//
+	// a. position:
+	auto delta_p = X_.block<3, 1>(kIndexErrorPos, 0);
+	pose_.block<3, 1>(0, 3) = pose_.block<3, 1>(0, 3) - delta_p;
+	// b. velocity:
+	auto delta_v = X_.block<3, 1>(kIndexErrorVel, 0);
+	vel_ = vel_ - delta_v;
+	// c. orientation:
+	auto delta_theta = X_.block<3, 1>(kIndexErrorOri, 0);
+	auto delta_R = Sophus::SO3d::exp(delta_theta).matrix();
+	pose_.block<3, 3>(0, 0) = pose_.block<3, 3>(0, 0) * delta_R.transpose();
 
-  // d. gyro bias:
-  if (IsCovStable(kIndexErrorGyro)) {
-    gyro_bias_ += X_.block<3, 1>(kIndexErrorGyro, 0);
-  }
 
-  // e. accel bias:
-  if (IsCovStable(kIndexErrorAccel)) {
-    accl_bias_ += X_.block<3, 1>(kIndexErrorAccel, 0);
-  }
+	// d. gyro bias:
+	if (IsCovStable(kIndexErrorGyro)) {
+		gyro_bias_ += X_.block<3, 1>(kIndexErrorGyro, 0);
+	}
+
+	// e. accel bias:
+	if (IsCovStable(kIndexErrorAccel)) {
+		accl_bias_ += X_.block<3, 1>(kIndexErrorAccel, 0);
+	}
 }
 
 /**

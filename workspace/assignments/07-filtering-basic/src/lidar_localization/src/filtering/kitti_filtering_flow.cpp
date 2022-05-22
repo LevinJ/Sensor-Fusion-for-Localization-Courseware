@@ -70,11 +70,13 @@ bool KITTIFilteringFlow::Run() {
   PublishLocalMap();
 
   ReadData();
+  static double last_cloud_time = 0;
 
   while (HasData()) {
     if (!HasInited()) {
       if (ValidLidarData()) {
         InitLocalization();
+        last_cloud_time = current_cloud_data_.time;
       }
     } else {
       // handle timestamp chaos in an more elegant way
@@ -91,10 +93,16 @@ bool KITTIFilteringFlow::Run() {
         }
 
         CorrectLocalization();
+        last_cloud_time = current_cloud_data_.time;
       }
 
       if (HasIMUData() && ValidIMUData()) {
-        UpdateLocalization();
+    	if((current_imu_raw_data_.time - last_cloud_time) < 0.08){
+    		UpdateLocalization();
+    	}else{
+    		break;
+    	}
+
       }
     }
   }
