@@ -4,3 +4,6 @@ build/
 03-lidar-odometry-advanced/
 .project
 .cproject
+workspace/assignments/05-imu-calib/
+workspace/assignments/06-imu-navigation/
+workspace/assignments/07-filtering-basic/
