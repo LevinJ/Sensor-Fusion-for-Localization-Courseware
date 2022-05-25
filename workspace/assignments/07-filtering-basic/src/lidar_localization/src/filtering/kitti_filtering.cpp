@@ -282,17 +282,35 @@ bool KITTIFiltering::InitFusion(const YAML::Node &config_node) {
  * @return true if success otherwise false
  */
 bool KITTIFiltering::SetInitScan(const CloudData &init_scan) {
-  // get init pose proposal using scan context match:
-  Eigen::Matrix4f init_pose = Eigen::Matrix4f::Identity();
-  if (!scan_context_manager_ptr_->DetectLoopClosure(init_scan, init_pose)) {
-    return false;
-  }
+	// get init pose proposal using scan context match:
+	Eigen::Matrix4f init_pose = Eigen::Matrix4f::Identity();
+	if (!scan_context_manager_ptr_->DetectLoopClosure(init_scan, init_pose)) {
+		return false;
+	}
 
-  // set init pose:
-  SetInitPose(init_pose);
-  has_inited_ = true;
+	//more accurate positioning with lidar cloud matching
+	Eigen::Matrix4f predict_pose = init_pose;
 
-  return true;
+	// remove invalid measurements:
+	std::vector<int> indices;
+	pcl::removeNaNFromPointCloud(*init_scan.cloud_ptr, *init_scan.cloud_ptr,
+			indices);
+
+	// downsample:
+	CloudData::CLOUD_PTR filtered_cloud_ptr(new CloudData::CLOUD());
+	current_scan_filter_ptr_->Filter(init_scan.cloud_ptr, filtered_cloud_ptr);
+
+
+	// matching:
+	CloudData::CLOUD_PTR result_cloud_ptr(new CloudData::CLOUD());
+	registration_ptr_->ScanMatch(filtered_cloud_ptr, predict_pose,
+			result_cloud_ptr, init_pose);
+
+	// set init pose:
+	SetInitPose(init_pose);
+	has_inited_ = true;
+
+	return true;
 }
 
 bool KITTIFiltering::SetInitGNSS(const Eigen::Matrix4f &gnss_pose) {

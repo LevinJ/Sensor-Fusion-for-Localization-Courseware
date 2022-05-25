@@ -55,6 +55,7 @@ public:
   Eigen::Matrix4f GetPose(void) { return current_pose_; }
   Eigen::Vector3f GetVel(void) { return current_vel_; }
   void GetOdometry(Eigen::Matrix4f &pose, Eigen::Vector3f &vel);
+  Eigen::Matrix4f init_pose_ = Eigen::Matrix4f::Identity();
 
 private:
   bool InitWithConfig(void);
@@ -117,7 +118,6 @@ private:
   CloudData::CLOUD_PTR current_scan_ptr_;
 
   Eigen::Matrix4f current_gnss_pose_ = Eigen::Matrix4f::Identity();
-  Eigen::Matrix4f init_pose_ = Eigen::Matrix4f::Identity();
   Eigen::Matrix4f current_pose_ = Eigen::Matrix4f::Identity();
   Eigen::Vector3f current_vel_ = Eigen::Vector3f::Zero();
 
