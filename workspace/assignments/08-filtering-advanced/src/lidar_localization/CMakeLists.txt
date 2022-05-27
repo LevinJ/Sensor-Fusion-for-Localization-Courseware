@@ -61,10 +61,11 @@ include(cmake/sophus.cmake)
 include(cmake/g2o.cmake)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(/home/levin/workspace/ros_projects/devel/include)
 include(cmake/global_defination.cmake)
 catkin_package()
 
-file(GLOB_RECURSE ALL_SRCS "*.cpp")
+file(GLOB_RECURSE ALL_SRCS "src/*.cpp")
 file(GLOB_RECURSE NODE_SRCS "src/apps/*_node.cpp")
 list(REMOVE_ITEM ALL_SRCS ${NODE_SRCS})
 
