@@ -7,4 +7,5 @@ workspace/assignments/06-imu-navigation/
 .cproject
 .project
 slam_data/
+workspace/assignments/08-filtering-advanced/
 

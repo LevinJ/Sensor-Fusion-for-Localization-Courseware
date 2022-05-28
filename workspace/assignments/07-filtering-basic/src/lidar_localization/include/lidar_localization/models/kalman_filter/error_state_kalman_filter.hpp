@@ -103,7 +103,11 @@ private:
   static constexpr int kDimMeasurementPose{6};
   static const int kDimMeasurementPoseNoise{6};
 
+  static constexpr int kDimMeasurementPoseVel{9};
+  static constexpr int kDimMeasurementPoseVelNoise{9};
 
+  static constexpr int kDimMeasurementPosiVel{6};
+  static constexpr int kDimMeasurementPosiVelNoise{6};
 
   // state:
   using VectorX=Eigen::Matrix<double, kDimState, 1>;
@@ -119,14 +123,28 @@ private:
   using MatrixCPose=Eigen::Matrix<double, kDimMeasurementPose,kDimMeasurementPoseNoise>;
   using MatrixRPose=Eigen::Matrix<double, kDimMeasurementPoseNoise,kDimMeasurementPoseNoise>;
 
+  using MatrixGPoseVel=Eigen::Matrix<double, kDimMeasurementPoseVel,kDimState> ;
+  using MatrixCPoseVel=Eigen::Matrix<double, kDimMeasurementPoseVel,kDimMeasurementPoseVelNoise>;
+  using MatrixRPoseVel=Eigen::Matrix<double, kDimMeasurementPoseVelNoise,kDimMeasurementPoseVelNoise>;
+
+  using MatrixGPosiVel=Eigen::Matrix<double, kDimMeasurementPosiVel,kDimState> ;
+  using MatrixCPosiVel=Eigen::Matrix<double, kDimMeasurementPosiVel,kDimMeasurementPosiVelNoise>;
+  using MatrixRPosiVel=Eigen::Matrix<double, kDimMeasurementPosiVelNoise,kDimMeasurementPosiVelNoise>;
+
   // measurement:
   using VectorYPose=Eigen::Matrix<double, kDimMeasurementPose, 1>;
+  using VectorYPoseVel=Eigen::Matrix<double, kDimMeasurementPoseVel, 1>;
+  using VectorYPosiVel=Eigen::Matrix<double, kDimMeasurementPosiVel, 1>;
 
   // Kalman gain:
   using MatrixKPose=Eigen::Matrix<double, kDimState, kDimMeasurementPose>;
+  using MatrixKPoseVel=Eigen::Matrix<double, kDimState, kDimMeasurementPoseVel>;
+  using MatrixKPosiVel=Eigen::Matrix<double, kDimState, kDimMeasurementPosiVel>;
 
   // state observality matrix:
   using MatrixQPose=Eigen::Matrix<double, kDimState * kDimMeasurementPose, kDimState>;
+  using MatrixQPoseVel=Eigen::Matrix<double, kDimState * kDimMeasurementPoseVel, kDimState>;
+  using MatrixQPosiVel=Eigen::Matrix<double, kDimState * kDimMeasurementPosiVel, kDimState>;
 
   /**
    * @brief  get unbiased angular velocity in body frame
@@ -229,6 +247,28 @@ private:
                                   Eigen::MatrixXd &K);
 
   /**
+   * @brief  correct error estimation using pose and body velocity measurement
+   * @param  T_nb, input pose measurement
+   * @param  v_b, input velocity measurement
+   * @return void
+   */
+  void CorrectErrorEstimationPoseVel(
+      const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
+      Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
+  );
+
+  /**
+    * @brief  correct error estimation using navigation position and body velocity measurement
+    * @param  T_nb, input position measurement
+    * @param  v_b, input velocity measurement
+    * @return void
+    */
+  void CorrectErrorEstimationPosiVel(
+      const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
+      Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
+  );
+
+  /**
    * @brief  correct error estimation
    * @param  measurement_type, measurement type
    * @param  measurement, input measurement
@@ -295,8 +335,20 @@ private:
   MatrixRPose RPose_ = MatrixRPose::Zero();
   MatrixQPose QPose_ = MatrixQPose::Zero();
 
+  MatrixGPoseVel GPoseVel_ = MatrixGPoseVel::Zero();
+  MatrixCPoseVel CPoseVel_ = MatrixCPoseVel::Zero();
+  MatrixRPoseVel RPoseVel_ = MatrixRPoseVel::Zero();
+  MatrixQPoseVel QPoseVel_ = MatrixQPoseVel::Zero();
+
+  MatrixGPosiVel GPosiVel_ = MatrixGPosiVel::Zero();
+  MatrixCPosiVel CPosiVel_ = MatrixCPosiVel::Zero();
+  MatrixRPosiVel RPosiVel_ = MatrixRPosiVel::Zero();
+  MatrixQPosiVel QPosiVel_ = MatrixQPosiVel::Zero();
+
   // measurement:
-  VectorYPose YPose_;
+  VectorYPose YPose_ = VectorYPose::Zero();
+  VectorYPoseVel YPoseVel_ = VectorYPoseVel::Zero(); 
+  VectorYPosiVel YPosiVel_ = VectorYPosiVel::Zero(); 
 };
 
 } // namespace lidar_localization

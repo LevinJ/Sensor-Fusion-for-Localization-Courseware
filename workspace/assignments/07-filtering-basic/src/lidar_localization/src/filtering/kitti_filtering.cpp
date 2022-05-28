@@ -262,6 +262,20 @@ bool KITTIFiltering::InitRegistration(
 }
 
 bool KITTIFiltering::InitFusion(const YAML::Node &config_node) {
+	// set up fusion strategy:
+	CONFIG.FUSION_STRATEGY_ID["pose_velocity"] = KalmanFilter::MeasurementType::POSE_VEL;
+	CONFIG.FUSION_STRATEGY_ID["pose_velocityyz"] = KalmanFilter::MeasurementType::POSE_VELYZ;
+	CONFIG.FUSION_STRATEGY_ID["pose"] = KalmanFilter::MeasurementType::POSE;
+
+	std::string fusion_strategy = config_node["fusion_strategy"].as<std::string>();
+
+	if ( CONFIG.FUSION_STRATEGY_ID.end() != CONFIG.FUSION_STRATEGY_ID.find(fusion_strategy) ) {
+		CONFIG.FUSION_STRATEGY = CONFIG.FUSION_STRATEGY_ID.at(fusion_strategy);
+	} else {
+		LOG(ERROR) << "Fusion strategy " << fusion_strategy << " NOT FOUND!";
+		return false;
+	}
+	std::cout << "\tGNSS-INS-Sim Localization Fusion Strategy: " << fusion_strategy << std::endl;
   // set up fusion method:
   CONFIG.FUSION_METHOD = config_node["fusion_method"].as<std::string>();
   if (CONFIG.FUSION_METHOD == "error_state_kalman_filter") {

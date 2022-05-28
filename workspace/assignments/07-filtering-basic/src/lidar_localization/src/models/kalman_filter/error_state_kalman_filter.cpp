@@ -51,6 +51,15 @@ ErrorStateKalmanFilter::ErrorStateKalmanFilter(const YAML::Node &node) {
       node["covariance"]["measurement"]["pose"]["pos"].as<double>();
   COV.MEASUREMENT.POSE.ORI =
       node["covariance"]["measurement"]["pose"]["ori"].as<double>();
+  COV.MEASUREMENT.POSI = 
+      node["covariance"]["measurement"]["pos"].as<double>();
+  COV.MEASUREMENT.VEL = 
+      node["covariance"]["measurement"]["vel"].as<double>();
+  // e. motion constraint:
+  MOTION_CONSTRAINT.ACTIVATED = 
+    node["motion_constraint"]["activated"].as<bool>();
+  MOTION_CONSTRAINT.W_B_THRESH = 
+    node["motion_constraint"]["w_b_thresh"].as<double>();
 
   // prompt:
   LOG(INFO) << std::endl
@@ -70,7 +79,12 @@ ErrorStateKalmanFilter::ErrorStateKalmanFilter(const YAML::Node &node) {
             << "\tmeasurement noise pose.: " << std::endl
             << "\t\tpos: " << COV.MEASUREMENT.POSE.POSI
             << ", ori.: " << COV.MEASUREMENT.POSE.ORI << std::endl
+            << "\tmeasurement noise pos.: " << COV.MEASUREMENT.POSI << std::endl
+            << "\tmeasurement noise vel.: " << COV.MEASUREMENT.VEL << std::endl
             << std::endl
+            << "\tmotion constraint: " << std::endl 
+            << "\t\tactivated: " << (MOTION_CONSTRAINT.ACTIVATED ? "true" : "false") << std::endl
+            << "\t\tw_b threshold: " << MOTION_CONSTRAINT.W_B_THRESH << std::endl
             << std::endl;
 
   //
@@ -92,6 +106,13 @@ ErrorStateKalmanFilter::ErrorStateKalmanFilter(const YAML::Node &node) {
   RPose_.block<3, 3>(0, 0) = COV.MEASUREMENT.POSE.POSI * Eigen::Matrix3d::Identity();
   RPose_.block<3, 3>(3, 3) = COV.MEASUREMENT.POSE.ORI * Eigen::Matrix3d::Identity();
 
+  RPoseVel_.block<3, 3>(0, 0) = COV.MEASUREMENT.POSE.POSI * Eigen::Matrix3d::Identity();
+  RPoseVel_.block<3, 3>(3, 3) = COV.MEASUREMENT.POSE.ORI * Eigen::Matrix3d::Identity();
+  RPoseVel_.block<3, 3>(6, 6) = COV.MEASUREMENT.VEL*Eigen::Matrix3d::Identity();
+
+  RPosiVel_.block<3, 3>(0, 0) = COV.MEASUREMENT.POSI*Eigen::Matrix3d::Identity();
+  RPosiVel_.block<3, 3>(3, 3) = COV.MEASUREMENT.VEL*Eigen::Matrix3d::Identity();
+
   // e. process equation:
   F_.block<3, 3>(kIndexErrorPos, kIndexErrorVel) = Eigen::Matrix3d::Identity();
   F_.block<3, 3>(kIndexErrorOri, kIndexErrorGyro) = -Eigen::Matrix3d::Identity();
@@ -106,8 +127,20 @@ ErrorStateKalmanFilter::ErrorStateKalmanFilter(const YAML::Node &node) {
   CPose_.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
   CPose_.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity();
 
+  GPoseVel_.block<3, 3>(0, kIndexErrorPos) = Eigen::Matrix3d::Identity();
+  GPoseVel_.block<3, 3>(3, kIndexErrorOri) = Eigen::Matrix3d::Identity();
+  CPoseVel_.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+  CPoseVel_.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity();
+  CPoseVel_.block<3, 3>(6, 6) = Eigen::Matrix3d::Identity();
+
+  GPosiVel_.block<3, 3>(0, kIndexErrorPos) = Eigen::Matrix3d::Identity();
+  CPosiVel_.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+  CPosiVel_.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity();
+
   // init soms:
   QPose_.block<kDimMeasurementPose, kDimState>(0, 0) = GPose_;
+  QPoseVel_.block<kDimMeasurementPoseVel, kDimState>(0, 0) = GPoseVel_;
+  QPosiVel_.block<kDimMeasurementPosiVel, kDimState>(0, 0) = GPosiVel_;
 }
 
 /**
@@ -594,6 +627,44 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPose(
 }
 
 /**
+ * @brief  correct error estimation using pose and body velocity measurement
+ * @param  T_nb, input pose measurement
+ * @param  v_b, input velocity measurement
+ * @return void
+ */
+void ErrorStateKalmanFilter::CorrectErrorEstimationPoseVel(
+    const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
+    Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
+) {
+    //
+    // TODO: set measurement:
+    //
+
+    // set measurement equation:
+
+    //
+    // TODO: set Kalman gain:
+    //
+}
+
+/**
+ * @brief  correct error estimation using navigation position and body velocity measurement
+ * @param  T_nb, input position measurement
+ * @param  v_b, input velocity measurement
+ * @return void
+ */
+void ErrorStateKalmanFilter::CorrectErrorEstimationPosiVel(
+    const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
+    Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
+) {
+    // parse measurement:
+
+    // set measurement equation:
+
+    // set Kalman gain:
+}
+
+/**
  * @brief  correct error estimation
  * @param  measurement_type, measurement type
  * @param  measurement, input measurement
@@ -608,12 +679,26 @@ void ErrorStateKalmanFilter::CorrectErrorEstimation(
   Eigen::MatrixXd G, K;
   switch (measurement_type) {
   case MeasurementType::POSE:
-    CorrectErrorEstimationPose(measurement.T_nb, Y, G, K);
+    CorrectErrorEstimationPose(
+      measurement.T_nb, 
+      Y, G, K
+    );
+    break;
+  case MeasurementType::POSE_VEL:
+    //
+    // TODO: register new correction logic here:
+    //
+    break;
+  case MeasurementType::POSI_VEL:
+    //
+    // TODO: register new correction logic here:
+    //
     break;
   default:
     break;
   }
 
+  //
   // TODO: perform Kalman correct:
   X_ = X_ + K * (Y - G * X_);
   P_ = (MatrixP::Identity() - K * G ) * P_;
