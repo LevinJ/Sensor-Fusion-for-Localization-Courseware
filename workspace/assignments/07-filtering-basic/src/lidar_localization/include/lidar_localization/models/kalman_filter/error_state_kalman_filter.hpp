@@ -244,7 +244,7 @@ private:
    */
   void CorrectErrorEstimationPose(const Eigen::Matrix4d &T_nb,
                                   Eigen::VectorXd &Y, Eigen::MatrixXd &G,
-                                  Eigen::MatrixXd &K);
+								  Eigen::MatrixXd &C, Eigen::MatrixXd &R);
 
   /**
    * @brief  correct error estimation using pose and body velocity measurement
@@ -254,8 +254,12 @@ private:
    */
   void CorrectErrorEstimationPoseVel(
       const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
-      Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
+      Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &C, Eigen::MatrixXd &R
   );
+  void CorrectErrorEstimationPoseVelYZ(
+        const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
+        Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &C, Eigen::MatrixXd &R
+    );
 
   /**
     * @brief  correct error estimation using navigation position and body velocity measurement

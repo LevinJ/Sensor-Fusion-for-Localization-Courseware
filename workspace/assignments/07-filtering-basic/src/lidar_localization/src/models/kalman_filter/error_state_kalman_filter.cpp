@@ -128,7 +128,7 @@ ErrorStateKalmanFilter::ErrorStateKalmanFilter(const YAML::Node &node) {
   CPose_.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity();
 
   GPoseVel_.block<3, 3>(0, kIndexErrorPos) = Eigen::Matrix3d::Identity();
-  GPoseVel_.block<3, 3>(3, kIndexErrorOri) = Eigen::Matrix3d::Identity();
+  GPoseVel_.block<3, 3>(6, kIndexErrorOri) = Eigen::Matrix3d::Identity();
   CPoseVel_.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
   CPoseVel_.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity();
   CPoseVel_.block<3, 3>(6, 6) = Eigen::Matrix3d::Identity();
@@ -599,18 +599,18 @@ void ErrorStateKalmanFilter::UpdateErrorEstimation(
  */
 void ErrorStateKalmanFilter::CorrectErrorEstimationPose(
     const Eigen::Matrix4d &T_nb, Eigen::VectorXd &Y, Eigen::MatrixXd &G,
-    Eigen::MatrixXd &K) {
+    Eigen::MatrixXd &C, Eigen::MatrixXd &R) {
   //
   // TODO: set measurement:
   //
 	auto p = T_nb.block<3, 1>(0, 3);
-	auto R = Sophus::SO3<double>(Eigen::Quaterniond(T_nb.block<3, 3>(0, 0)).normalized());
+	auto R_so = Sophus::SO3<double>(Eigen::Quaterniond(T_nb.block<3, 3>(0, 0)).normalized());
 	auto p_hat = pose_.block<3, 1>(0, 3);
 	auto R_hat =  Sophus::SO3<double>(pose_.block<3, 3>(0, 0));
 
 
 	auto delta_p = p_hat - p;
-	auto delta_theta = (R.inverse() * R_hat).log();
+	auto delta_theta = (R_so.inverse() * R_hat).log();
 //	auto delta_theta = Sophus::SO3<double>(delta_R).log();
 
 	Y = Eigen::VectorXd::Zero(kDimMeasurementPose);
@@ -619,11 +619,13 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPose(
 
   // TODO: set measurement equation:
 	G = GPose_;
+	C = CPose_;
+	R = RPose_;
 
   // TODO: set Kalman gain:
-	auto PGt = P_ * G.transpose();
-	auto S = G * PGt + CPose_ * RPose_ *  CPose_.transpose();
-	K =  PGt * S.inverse();
+//	auto PGt = P_ * G.transpose();
+//	auto S = G * PGt + CPose_ * RPose_ *  CPose_.transpose();
+//	K =  PGt * S.inverse();
 }
 
 /**
@@ -634,17 +636,99 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPose(
  */
 void ErrorStateKalmanFilter::CorrectErrorEstimationPoseVel(
     const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
-    Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
+    Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &C, Eigen::MatrixXd &R
 ) {
-    //
-    // TODO: set measurement:
-    //
+	//
+	  // TODO: set measurement:
+	  //
+		auto p = T_nb.block<3, 1>(0, 3);
+		auto R_so = Sophus::SO3<double>(Eigen::Quaterniond(T_nb.block<3, 3>(0, 0)).normalized());
+		auto p_hat = pose_.block<3, 1>(0, 3);
+		auto R_hat =  Sophus::SO3<double>(pose_.block<3, 3>(0, 0));
+		auto vw_hat = vel_;
+		Eigen::Matrix3d Rbw_hat = (pose_.block<3, 3>(0, 0)).transpose();
+		Eigen::Vector3d vb_hat = Rbw_hat * vw_hat;
 
-    // set measurement equation:
 
-    //
-    // TODO: set Kalman gain:
-    //
+		auto delta_p = p_hat - p;
+		auto delta_theta = (R_so.inverse() * R_hat).log();
+		Eigen::Vector3d delta_v = vb_hat -v_b;
+
+		std::cout<<"vb_hat="<<vb_hat.transpose()<<std::endl;
+		std::cout<<"v_b="<<v_b.transpose()<<std::endl;
+		std::cout<<"observed delta_v="<<delta_v.transpose()<<std::endl;
+
+		Y = Eigen::VectorXd::Zero(kDimMeasurementPoseVel);
+		Y.block<3, 1>(0, 0) = delta_p;
+		Y.block<3, 1>(3, 0) = delta_v;
+		Y.block<3, 1>(6, 0) = delta_theta;
+//
+//	  // TODO: set measurement equation:
+		G = GPoseVel_;
+		G.block<3, 3>(3, kIndexErrorVel) = Rbw_hat;
+		G.block<3, 3>(3, kIndexErrorOri) = skew(vb_hat);
+
+
+		std::cout<<"predicted delta_v="<<(G * X_).transpose()<<std::endl;
+
+		std::cout<<std::endl<<std::endl;
+
+		C = CPoseVel_;
+		R = RPoseVel_;
+//
+//	  // TODO: set Kalman gain:
+//		auto PGt = P_ * G.transpose();
+//		auto S = G * PGt + CPoseVel_ * RPoseVel_ *  CPoseVel_.transpose();
+//		K =  PGt * S.inverse();
+}
+
+void ErrorStateKalmanFilter::CorrectErrorEstimationPoseVelYZ(
+		const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b2, const Eigen::Vector3d &w_b,
+		Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &C, Eigen::MatrixXd &R) {
+	//
+	// TODO: set measurement:
+	//
+	static constexpr int meas_size{8};
+	Eigen::Vector3d v_b = Eigen::Vector3d::Zero();
+	auto p = T_nb.block<3, 1>(0, 3);
+	auto R_so = Sophus::SO3<double>(Eigen::Quaterniond(T_nb.block<3, 3>(0, 0)).normalized());
+	auto p_hat = pose_.block<3, 1>(0, 3);
+	auto R_hat =  Sophus::SO3<double>(pose_.block<3, 3>(0, 0));
+	auto vw_hat = vel_;
+	Eigen::Matrix3d Rbw_hat = (pose_.block<3, 3>(0, 0)).transpose();
+	Eigen::Vector3d vb_hat = Rbw_hat * vw_hat;
+
+
+	auto delta_p = p_hat - p;
+	auto delta_theta = (R_so.inverse() * R_hat).log();
+	Eigen::Vector2d delta_v = (vb_hat -v_b).segment(1, 2);
+
+	std::cout<<"vb_hat="<<vb_hat.transpose()<<std::endl;
+	std::cout<<"v_b="<<v_b.transpose()<<std::endl;
+	std::cout<<"observed delta_v="<<delta_v.transpose()<<std::endl;
+
+	Y = Eigen::VectorXd::Zero(meas_size);
+	Y.block<3, 1>(0, 0) = delta_p;
+	Y.block<2, 1>(3, 0) = delta_v;
+	Y.block<3, 1>(5, 0) = delta_theta;
+	//
+	//	  // TODO: set measurement equation:
+	G = Eigen::Matrix<double, meas_size,kDimState>::Zero();
+	G.block<2, 3>(3, kIndexErrorVel) = Rbw_hat.block<2,3>(1, 0);
+	G.block<2, 3>(3, kIndexErrorOri) = (skew(vb_hat)).block<2,3>(1,0);
+	G.block<3, 3>(0, kIndexErrorPos) = Eigen::Matrix3d::Identity();
+	G.block<3, 3>(5, kIndexErrorOri) = Eigen::Matrix3d::Identity();
+
+
+	std::cout<<"predicted delta_v="<<(G * X_).transpose()<<std::endl;
+
+	std::cout<<std::endl<<std::endl;
+
+	C = Eigen::Matrix<double, meas_size, meas_size>::Identity();
+	R = Eigen::Matrix<double, meas_size, meas_size>::Zero();
+	R.block<3, 3>(0, 0) = COV.MEASUREMENT.POSE.POSI * Eigen::Matrix3d::Identity();
+	R.block<2, 2>(3, 3) = COV.MEASUREMENT.POSE.ORI * Eigen::Matrix2d::Identity();
+	R.block<3, 3>(5, 5) = COV.MEASUREMENT.VEL*Eigen::Matrix3d::Identity();
 }
 
 /**
@@ -675,20 +759,28 @@ void ErrorStateKalmanFilter::CorrectErrorEstimation(
   //
   // TODO: understand ESKF correct workflow
   //
+
   Eigen::VectorXd Y;
-  Eigen::MatrixXd G, K;
+  Eigen::MatrixXd G, K, C, R;
   switch (measurement_type) {
   case MeasurementType::POSE:
+	std::cout<<"v_b="<<measurement.v_b.transpose()<<std::endl;
+	std::cout<<std::endl<<std::endl;
     CorrectErrorEstimationPose(
       measurement.T_nb, 
-      Y, G, K
+      Y, G, C, R
     );
     break;
   case MeasurementType::POSE_VEL:
     //
     // TODO: register new correction logic here:
-    //
+	CorrectErrorEstimationPoseVel(measurement.T_nb, measurement.v_b, measurement.w_b, Y, G, C , R);
     break;
+  case MeasurementType::POSE_VELYZ:
+      //
+      // TODO: register new correction logic here:
+  	CorrectErrorEstimationPoseVelYZ(measurement.T_nb, measurement.v_b, measurement.w_b, Y, G, C , R);
+      break;
   case MeasurementType::POSI_VEL:
     //
     // TODO: register new correction logic here:
@@ -697,6 +789,10 @@ void ErrorStateKalmanFilter::CorrectErrorEstimation(
   default:
     break;
   }
+
+  auto PGt = P_ * G.transpose();
+  auto S = G * PGt + C * R *  C.transpose();
+  K =  PGt * S.inverse();
 
   //
   // TODO: perform Kalman correct:

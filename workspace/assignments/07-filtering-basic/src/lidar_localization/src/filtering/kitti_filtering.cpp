@@ -120,7 +120,7 @@ bool KITTIFiltering::Correct(const IMUData &imu_data,
                       imu_data.angular_velocity.z);
 
   // Kalman correction:
-  if (kalman_filter_ptr_->Correct(imu_data, KalmanFilter::MeasurementType::POSE,
+  if (kalman_filter_ptr_->Correct(imu_data, CONFIG.FUSION_STRATEGY,
                                   current_measurement_)) {
     kalman_filter_ptr_->GetOdometry(current_pose_, current_vel_);
 
@@ -264,7 +264,7 @@ bool KITTIFiltering::InitRegistration(
 bool KITTIFiltering::InitFusion(const YAML::Node &config_node) {
 	// set up fusion strategy:
 	CONFIG.FUSION_STRATEGY_ID["pose_velocity"] = KalmanFilter::MeasurementType::POSE_VEL;
-	CONFIG.FUSION_STRATEGY_ID["pose_velocityyz"] = KalmanFilter::MeasurementType::POSE_VELYZ;
+	CONFIG.FUSION_STRATEGY_ID["pose_velocity_yz"] = KalmanFilter::MeasurementType::POSE_VELYZ;
 	CONFIG.FUSION_STRATEGY_ID["pose"] = KalmanFilter::MeasurementType::POSE;
 
 	std::string fusion_strategy = config_node["fusion_strategy"].as<std::string>();
