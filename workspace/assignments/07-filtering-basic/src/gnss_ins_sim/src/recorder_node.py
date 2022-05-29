@@ -625,9 +625,11 @@ def gnss_ins_sim_recorder():
     # generate simulated data:
     #
     # a. identify motion file:
-    motion_def_path = os.path.join(
-        rospkg.RosPack().get_path('gnss_ins_sim'), 'config', 'motion_def', motion_def_name
-    )
+    motion_def_path = '/home/levin/workspace/ros_projects/src/sensor-Fusion-for-Localization-Courseware/workspace/assignments/07-filtering-basic/src/gnss_ins_sim/config/motion_def'
+    motion_def_path = motion_def_path+"/virtual_proving_ground.csv"
+    # motion_def_path = os.path.join(
+    #     rospkg.RosPack().get_path('gnss_ins_sim_recorder_node'), 'config', 'motion_def', motion_def_name
+    # )
     # b. init simulator:
     imu_simulator = get_gnss_ins_sim(
         # motion def file:

@@ -9,4 +9,8 @@ workspace/assignments/06-imu-navigation/
 slam_data/
 workspace/assignments/08-filtering-advanced/
 *.pyc
+demo_saved_data/
+.settings/
+.~lock*
+.pydevproject
 
