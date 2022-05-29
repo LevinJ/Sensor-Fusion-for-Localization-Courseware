@@ -33,6 +33,7 @@ class GNSSData {
 
   public: 
     void InitOriginPosition();
+    void InitOriginPosition2();
     void UpdateXYZ();
 
     static void Reverse(

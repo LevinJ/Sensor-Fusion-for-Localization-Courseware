@@ -30,6 +30,15 @@ void GNSSData::InitOriginPosition() {
     origin_position_inited = true;
 }
 
+void GNSSData::InitOriginPosition2() {
+	geo_converter.Reset(latitude, longitude, altitude);
+	origin_latitude = latitude;
+	origin_longitude = longitude;
+	origin_altitude = altitude;
+
+	origin_position_inited = true;
+}
+
 void GNSSData::UpdateXYZ() {
     if (!origin_position_inited) {
         LOG(WARNING) << "WARNING: GeoConverter is NOT initialized.";
