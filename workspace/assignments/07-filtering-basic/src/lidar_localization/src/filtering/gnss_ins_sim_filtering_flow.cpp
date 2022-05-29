@@ -44,7 +44,7 @@ GNSSINSSimFilteringFlow::GNSSINSSimFilteringFlow(
 
 bool GNSSINSSimFilteringFlow::Run() {
     ReadData();
-
+    static double last_pos_time = 0;
     while( HasData() ) {
         if ( !HasInited() ) {
             if ( 
@@ -52,6 +52,7 @@ bool GNSSINSSimFilteringFlow::Run() {
                 HasIMUData() && ValidIMUData()
             ) {
                 InitLocalization();
+                last_pos_time = current_pos_vel_mag_data_.time;
             }
         } else {
             // handle timestamp chaos in an more elegant way
@@ -72,10 +73,15 @@ bool GNSSINSSimFilteringFlow::Run() {
                 }
 
                 CorrectLocalization();
+                last_pos_time = current_pos_vel_mag_data_.time;
             }
            
             if ( HasIMUData() && ValidIMUData() ) {
-                UpdateLocalization();
+            	if((current_imu_data_.time - last_pos_time) < 0.08){
+            		UpdateLocalization();
+            	}else{
+            		break;
+            	}
             }
         }
     }

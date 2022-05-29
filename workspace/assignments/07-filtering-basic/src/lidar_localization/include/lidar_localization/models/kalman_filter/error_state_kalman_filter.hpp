@@ -269,7 +269,7 @@ private:
 	 */
 	void CorrectErrorEstimationPosiVel(
 			const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
-			Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
+			Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &C, Eigen::MatrixXd &R
 	);
 
 	/**

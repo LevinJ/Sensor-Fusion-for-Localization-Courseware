@@ -739,13 +739,39 @@ void ErrorStateKalmanFilter::CorrectErrorEstimationPoseVelYZ(
  */
 void ErrorStateKalmanFilter::CorrectErrorEstimationPosiVel(
 		const Eigen::Matrix4d &T_nb, const Eigen::Vector3d &v_b, const Eigen::Vector3d &w_b,
-		Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &K
-) {
-	// parse measurement:
+		Eigen::VectorXd &Y, Eigen::MatrixXd &G, Eigen::MatrixXd &C, Eigen::MatrixXd &R) {
+	auto p = T_nb.block<3, 1>(0, 3);
+	auto p_hat = pose_.block<3, 1>(0, 3);
+	auto R_hat =  Sophus::SO3<double>(pose_.block<3, 3>(0, 0));
+	auto vw_hat = vel_;
+	Eigen::Matrix3d Rbw_hat = (pose_.block<3, 3>(0, 0)).transpose();
+	Eigen::Vector3d vb_hat = Rbw_hat * vw_hat;
 
-	// set measurement equation:
 
-	// set Kalman gain:
+	Eigen::Vector3d delta_p = p_hat - p;
+	Eigen::Vector3d delta_v = vb_hat -v_b;
+
+	std::cout<<"vw_hat="<<vw_hat.transpose()<<std::endl;
+	std::cout<<"vb_hat="<<vb_hat.transpose()<<std::endl;
+	std::cout<<"v_b="<<v_b.transpose()<<std::endl;
+	std::cout<<"observed delta_v="<<delta_v.transpose()<<std::endl;
+
+	Y = YPosiVel_;
+	Y.block<3, 1>(0, 0) = delta_p;
+	Y.block<3, 1>(3, 0) = delta_v;
+	//
+	//	  // TODO: set measurement equation:
+	G = GPosiVel_;
+	G.block<3, 3>(3, kIndexErrorVel) = Rbw_hat;
+	G.block<3, 3>(3, kIndexErrorOri) = skew(vb_hat);
+
+
+	std::cout<<"predicted delta_v="<<(G * X_).transpose()<<std::endl;
+
+	std::cout<<std::endl<<std::endl;
+
+	C = CPosiVel_;
+	R = RPosiVel_;
 }
 
 /**
@@ -785,6 +811,7 @@ void ErrorStateKalmanFilter::CorrectErrorEstimation(
 		//
 		// TODO: register new correction logic here:
 		//
+		CorrectErrorEstimationPosiVel(measurement.T_nb, measurement.v_b, measurement.w_b, Y, G, C , R);
 		break;
 	default:
 		break;
