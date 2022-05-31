@@ -1,1 +1,11 @@
 .vscode
+workspace/assignments/02-lidar-odometry-basic/
+workspace/assignments/03-lidar-odometry-advanced/
+workspace/assignments/04-mapping-and-matching/
+workspace/assignments/05-imu-calib/
+workspace/assignments/06-imu-navigation/
+workspace/assignments/07-filtering-basic/
+workspace/assignments/08-filtering-advanced/
+workspace/assignments/09-graph-optimization/src/lidar_localization/.cproject
+workspace/assignments/09-graph-optimization/src/lidar_localization/.project
+
