@@ -71,25 +71,28 @@ file(GLOB_RECURSE ALL_SRCS "src/*.cpp")
 file(GLOB_RECURSE NODE_SRCS "src/apps/*_node.cpp")
 list(REMOVE_ITEM ALL_SRCS ${NODE_SRCS})
 
-add_executable(data_pretreat_node src/apps/data_pretreat_node.cpp ${ALL_SRCS})
+add_library(src_lib STATIC ${ALL_SRCS})
+add_dependencies(src_lib ${catkin_EXPORTED_TARGETS})
+
+add_executable(data_pretreat_node src/apps/data_pretreat_node.cpp)
 add_dependencies(data_pretreat_node ${catkin_EXPORTED_TARGETS})
-target_link_libraries(data_pretreat_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
+target_link_libraries(data_pretreat_node src_lib ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
 
-add_executable(front_end_node src/apps/front_end_node.cpp ${ALL_SRCS})
+add_executable(front_end_node src/apps/front_end_node.cpp)
 add_dependencies(front_end_node ${catkin_EXPORTED_TARGETS})
-target_link_libraries(front_end_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
+target_link_libraries(front_end_node src_lib ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
 
-add_executable(loop_closing_node src/apps/loop_closing_node.cpp ${ALL_SRCS})
+add_executable(loop_closing_node src/apps/loop_closing_node.cpp)
 add_dependencies(loop_closing_node ${catkin_EXPORTED_TARGETS})
-target_link_libraries(loop_closing_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
+target_link_libraries(loop_closing_node src_lib ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
 
-add_executable(lio_back_end_node src/apps/lio_back_end_node.cpp ${ALL_SRCS})
+add_executable(lio_back_end_node src/apps/lio_back_end_node.cpp)
 add_dependencies(lio_back_end_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(lio_back_end_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
+target_link_libraries(lio_back_end_node src_lib ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
 
-add_executable(viewer_node src/apps/viewer_node.cpp ${ALL_SRCS})
+add_executable(viewer_node src/apps/viewer_node.cpp)
 add_dependencies(viewer_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(viewer_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
+target_link_libraries(viewer_node ${catkin_LIBRARIES} src_lib ${ALL_TARGET_LIBRARIES} )
 
 #############
 ## Install ##
