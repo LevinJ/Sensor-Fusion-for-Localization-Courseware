@@ -9,6 +9,7 @@
 #include "lidar_localization/global_defination/global_defination.h"
 
 #include "glog/logging.h"
+#include "lidar_localization/models/pre_integrator/integration_base.h"
 
 namespace lidar_localization {
 
@@ -223,6 +224,44 @@ void IMUPreIntegrator::UpdateState(void) {
         curr_imu_data.linear_acceleration.y - state.b_a_i_.y(),
         curr_imu_data.linear_acceleration.z - state.b_a_i_.z()
     );
+
+    //use integrationbase class from vins_mono
+    IntegrationBase int_base;
+
+    double dt = T;
+    const Eigen::Vector3d acc_0 = {prev_imu_data.linear_acceleration.x, prev_imu_data.linear_acceleration.y, prev_imu_data.linear_acceleration.z};
+    const Eigen::Vector3d gyr_0 = {prev_imu_data.angular_velocity.x, prev_imu_data.angular_velocity.y, prev_imu_data.angular_velocity.z};
+    const Eigen::Vector3d acc_1 = {curr_imu_data.linear_acceleration.x, curr_imu_data.linear_acceleration.y, curr_imu_data.linear_acceleration.z};
+    const Eigen::Vector3d gyr_1 = {curr_imu_data.angular_velocity.x, curr_imu_data.angular_velocity.y, curr_imu_data.angular_velocity.z};
+
+    const Eigen::Vector3d &delta_p = state.alpha_ij_;
+    const Eigen::Quaterniond &delta_q = state.theta_ij_.unit_quaternion();
+    const Eigen::Vector3d &delta_v = state.beta_ij_;
+    const Eigen::Vector3d &linearized_ba = state.b_a_i_;
+    const Eigen::Vector3d &linearized_bg = state.b_g_i_;
+
+
+    Eigen::Vector3d &result_delta_p = state.alpha_ij_;
+    Eigen::Quaterniond result_delta_q;
+    Eigen::Vector3d &result_delta_v = state.beta_ij_;;
+    Eigen::Vector3d &result_linearized_ba = state.b_a_i_;
+    Eigen::Vector3d &result_linearized_bg = state.b_g_i_;
+
+    bool update_jacobian =  true;
+    int_base.jacobian = J_;
+    int_base.covariance = P_;
+    int_base.noise = Q_;
+    int_base.midPointIntegration(dt,
+                                acc_0, gyr_0,
+                                acc_1, gyr_1,
+                                delta_p, delta_q, delta_v,
+                                linearized_ba, linearized_bg,
+                                result_delta_p, result_delta_q, result_delta_v,
+                                result_linearized_ba, result_linearized_bg,update_jacobian);
+    J_ = int_base.jacobian;
+    P_ = int_base.covariance;
+    state.theta_ij_ = Sophus::SO3d(result_delta_q);
+
 
     //
     // TODO: a. update mean:

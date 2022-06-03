@@ -422,11 +422,11 @@ bool LIOBackEnd::SaveOptimizedPose() {
         // a. ground truth, IMU/GNSS:
         current_pose = key_frames_deque_.at(i).pose;
         current_pose(2, 3) = 0.0f;
-        SavePose(ground_truth_ofs_, current_pose);
+        SavePose(laser_odom_ofs_, current_pose);
         // b. lidar odometry:
         current_pose = key_gnss_deque_.at(i).pose;
         current_pose(2, 3) = 0.0f;
-        SavePose(laser_odom_ofs_, current_pose);
+        SavePose(ground_truth_ofs_, current_pose);
         // c. optimized odometry:
         current_pose = optimized_key_frames_.at(i).pose;
         current_pose(2, 3) = 0.0f;

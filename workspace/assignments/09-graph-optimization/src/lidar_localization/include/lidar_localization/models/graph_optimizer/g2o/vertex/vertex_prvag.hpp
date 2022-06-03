@@ -72,6 +72,13 @@ public:
         //
         // TODO: do update
         //
+    	Eigen::VectorXd::ConstMapType v(update, 15);
+    	_estimate.pos += v.segment(PRVAG::INDEX_POS, 3);
+    	_estimate.vel += v.segment(PRVAG::INDEX_VEL, 3);
+    	_estimate.b_a += v.segment(PRVAG::INDEX_B_A, 3);
+    	_estimate.b_g += v.segment(PRVAG::INDEX_B_G, 3);
+
+    	_estimate.ori = _estimate.ori *  Sophus::SO3d::exp(v.segment(PRVAG::INDEX_ORI, 3));
     }
 
     bool isUpdated(void) const { return _is_updated; }

@@ -38,36 +38,49 @@ public:
 
 	EdgePRVAGIMUPreIntegration()
 	 : g2o::BaseBinaryEdge<15, Vector15d, g2o::VertexPRVAG, g2o::VertexPRVAG>() {
+		;
 	 }
 
 	virtual void computeError() override {
         g2o::VertexPRVAG* v0 = dynamic_cast<g2o::VertexPRVAG*>(_vertices[0]);
         g2o::VertexPRVAG* v1 = dynamic_cast<g2o::VertexPRVAG*>(_vertices[1]);
 
-		const Eigen::Vector3d &pos_i = v0->estimate().pos;
-		const Sophus::SO3d    &ori_i = v0->estimate().ori;
-		const Eigen::Vector3d &vel_i = v0->estimate().vel;
+		const Eigen::Vector3d &Pi = v0->estimate().pos;
+		const Sophus::SO3d    &Qi = v0->estimate().ori;
+		const Eigen::Vector3d &Vi = v0->estimate().vel;
 		const Eigen::Vector3d &b_a_i = v0->estimate().b_a;
 		const Eigen::Vector3d &b_g_i = v0->estimate().b_g;
 
-		const Eigen::Vector3d &pos_j = v1->estimate().pos;
-		const Sophus::SO3d    &ori_j = v1->estimate().ori;
-		const Eigen::Vector3d &vel_j = v1->estimate().vel;
+		const Eigen::Vector3d &Pj = v1->estimate().pos;
+		const Sophus::SO3d    &Qj = v1->estimate().ori;
+		const Eigen::Vector3d &Vj = v1->estimate().vel;
 		const Eigen::Vector3d &b_a_j = v1->estimate().b_a;
 		const Eigen::Vector3d &b_g_j = v1->estimate().b_g;
 
 		//
 		// TODO: update pre-integration measurement caused by bias change:
 		// 
+		Eigen::Vector3d d_b_a_i = b_a_i - _measurement.block<3, 1>(INDEX_A, 0);
+		Eigen::Vector3d d_b_g_i = b_g_i - _measurement.block<3, 1>(INDEX_G, 0);
+//		v0->getDeltaBiases(d_b_a_i, d_b_g_i);
+		updateMeasurement(d_b_a_i, d_b_g_i);
+		Sophus::SO3d corrected_delta_q = Sophus::SO3d::exp(_measurement.block<3, 1>(INDEX_R, 0));
+		Eigen::Vector3d corrected_delta_v = _measurement.block<3, 1>(INDEX_V, 0);
+		Eigen::Vector3d corrected_delta_p = _measurement.block<3, 1>(INDEX_P, 0);
+
+		_measurement.block<3, 1>(INDEX_A, 0) = b_a_i;
+		_measurement.block<3, 1>(INDEX_G, 0) = b_g_i;
 
 		//
 		// TODO: compute error:
 		//
-		_error.block<3, 1>(INDEX_P, 0) = Eigen::Vector3d::Zero();
-		_error.block<3, 1>(INDEX_R, 0) = Eigen::Vector3d::Zero();
-		_error.block<3, 1>(INDEX_V, 0) = Eigen::Vector3d::Zero();
-		_error.block<3, 1>(INDEX_A, 0) = Eigen::Vector3d::Zero();
-		_error.block<3, 1>(INDEX_G, 0) = Eigen::Vector3d::Zero();
+		Eigen::Vector3d &G = g_;
+		double &sum_dt = T_;
+		_error.block<3, 1>(INDEX_P, 0) = Qi.inverse() * (0.5 * G * sum_dt * sum_dt + Pj - Pi - Vi * sum_dt) - corrected_delta_p;
+		_error.block<3, 1>(INDEX_R, 0) = 2 * (corrected_delta_q.inverse() * (Qi.inverse() * Qj)).log();
+		_error.block<3, 1>(INDEX_V, 0) = Qi.inverse() * (G * sum_dt + Vj - Vi) - corrected_delta_v;
+		_error.block<3, 1>(INDEX_A, 0) = b_a_j - b_a_i;
+		_error.block<3, 1>(INDEX_G, 0) = b_g_j - b_g_i;
     }
 
 	void setT(const double &T) {
