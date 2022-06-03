@@ -7,3 +7,5 @@ build/
 workspace/assignments/05-imu-calib/
 workspace/assignments/06-imu-navigation/
 workspace/assignments/07-filtering-basic/
+workspace/assignments/08-filtering-advanced/
+workspace/assignments/09-graph-optimization/
